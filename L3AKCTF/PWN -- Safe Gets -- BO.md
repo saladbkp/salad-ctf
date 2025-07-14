@@ -101,6 +101,8 @@ p.sendline(binary)
 p.interactive()
 ```
 
+## 3.4 FULL SCRIPT
+![[c1_3.py]]
 
 # 4.0 FLAG 
 ```
