@@ -3,7 +3,7 @@ import re
 from datetime import datetime
 
 BASE_FOLDER = "."
-SUMMARY_FILE = os.path.join(BASE_FOLDER, "SUMMARY.md")
+SUMMARY_FILE = os.path.join(BASE_FOLDER, "readme.md")
 
 def extract_metadata(filepath):
     print(filepath)
