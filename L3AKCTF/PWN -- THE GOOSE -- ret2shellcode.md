@@ -128,7 +128,7 @@ dbgstart = lambda script=scripts: gdb.attach(r, gdbscript=script)
 就会带出下一个byte which continue printing until it finds a `\x00`
 
 所以 b'a' * 64 可以看到 多出一个 ) 
-![[attachments/Pasted image 20250715004319.png]]
+![[./attachments/Pasted image 20250715004319.png]]
 
 问题来了 怎样转成 int 
 -> Python’s way of **getting the first byte as an integer**.
@@ -149,10 +149,10 @@ sla("honks?", str(guess).encode())
 ## 3.2 FORMAT STRING
 what position to format string ????
 为什么有 FS
-![[attachments/Pasted image 20250715004658.png]]
+![[./attachments/Pasted image 20250715004658.png]]
 这个很搞笑 我直接 %p
 然后就有
-![[attachments/Pasted image 20250715004719.png]]
+![[./attachments/Pasted image 20250715004719.png]]
 然后就 gdb 找 这个是什么 tele xxxx
 他是一个stack leak 没有什么用
 这种时候 只能靠 offset 了
@@ -175,7 +175,7 @@ ROP 我不会也找不到 libc 所以就算 shellcode
 ## 3.3 FIND BUFFER ADDRESS
 how to find buffer address
 开 dbgstart() 定位read 然后 send aaaabbbb
-![[attachments/Pasted image 20250715005607.png]]
+![[./attachments/Pasted image 20250715005607.png]]
 算offset 罢了 leak - buf = 0x150, stack leak - 0x150 就是 buf 了
 ```python
 # leak info
@@ -216,7 +216,7 @@ payload += p64(shellcode_address)
 ```
 
 ## 3.5 FULL SCRIPT
-![[attachments/c2 2.py]]
+![[./attachments/c2 2.py]]
 # 4.0 FLAG 
 find / -name * flag*
 cat /flag
