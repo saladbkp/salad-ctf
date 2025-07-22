@@ -57,7 +57,7 @@ win = 0x0000000000401262
 # 3.0 Solution
 ## 3.1 OFFSET
 ok 我们第一个要想的问题是 offset 
-![[./attachments/Pasted image 20250714170240.png]]
+![[Pasted image 20250714170240.png]]
 我一开始以为是直接0x110+8 + win 然后发现不work ？？？？？
 0x118 = 280
 
@@ -102,7 +102,7 @@ p.interactive()
 ```
 
 ## 3.4 FULL SCRIPT
-![[./attachments/c1_3.py]]
+![[c1_3.py]]
 
 # 4.0 FLAG 
 ```

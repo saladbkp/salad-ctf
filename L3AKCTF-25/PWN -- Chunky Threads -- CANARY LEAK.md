@@ -80,7 +80,7 @@ void *__fastcall print(void *a1)
 ```
 USAGE 
 
-![[./attachments/Pasted image 20250716220629.png]]
+![[Pasted image 20250716220629.png]]
 first need to 
 CHUNKS `NUM OF THREAD`
 CHUNK `TIMESLEEP` `REPEAT` `CHAR`
@@ -90,7 +90,7 @@ the customize print so I assume need to do something from here
 ## 3.1 FIND THE LEAKING POINT 
 PRINT 这边是最后把 a1 给到 dest
 so 这个 dest 是 收到 rbp - 0x50
-![[./attachments/Pasted image 20250716221045.png]]
+![[Pasted image 20250716221045.png]]
 而且没有 \x00? 不知道 有没有关系
 会把 dest 压满 然后带出后面的 value 
 
@@ -177,4 +177,4 @@ payload += p64(system)
 L3AK{m30w_m30w_1n_th3_d4rk_y0u_c4n_r0p_l1k3_th4t_c4t}
 
 # 5.0 FINAL SCRIPT 
-![[./attachments/exploit3.py]]
+![[exploit3.py]]
