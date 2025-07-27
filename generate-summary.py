@@ -60,9 +60,9 @@ def load_existing_entries():
     return existing
 
 def generate_summary():
-    existing_entries = load_existing_entries()
-    new_rows = []
+    all_rows = []
 
+    # Scan all folders
     for ctf_name in os.listdir(BASE_FOLDER):
         ctf_path = os.path.join(BASE_FOLDER, ctf_name)
         if not os.path.isdir(ctf_path) or ctf_name == "node_modules":
@@ -76,21 +76,20 @@ def generate_summary():
             metadata = extract_metadata(full_path)
             if metadata:
                 category, chal_name, chal_type, desc, date, solved = metadata
-                key = (category, ctf_name, chal_name)
-                if key not in existing_entries:
-                    new_rows.append((category, ctf_name, chal_name, chal_type, desc, date, solved))
-                    existing_entries.add(key)  # Prevent duplication in one run
+                all_rows.append((category, ctf_name, chal_name, chal_type, desc, date, solved))
 
-    if not os.path.exists(SUMMARY_FILE):
-        with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
-            f.write("| Category | CTF Name | Challenge Name | Type | Description | Date | Solved |\n")
-            f.write("|----------|----------|----------------|------|-------------|------|--------|\n")
+    # Sort all rows by date (newest first)
+    all_rows.sort(key=lambda r: r[5], reverse=True)
 
-    with open(SUMMARY_FILE, 'a', encoding='utf-8') as f:
-        for row in sorted(new_rows, key=lambda r: r[5], reverse=True):
+    # Rewrite the readme.md file
+    with open(SUMMARY_FILE, 'w', encoding='utf-8') as f:
+        f.write("| Category | CTF Name | Challenge Name | Type | Description | Date | Solved |\n")
+        f.write("|----------|----------|----------------|------|-------------|------|--------|\n")
+        for row in all_rows:
             f.write(f"| {row[0]} | {row[1]} | {row[2]} | {row[3]} | {row[4]} | {row[5]} | {row[6]} |\n")
 
-    print(f"[+] {len(new_rows)} new entries added to {SUMMARY_FILE}")
+    print(f"[+] Summary updated with {len(all_rows)} total entries sorted by date.")
+
 
 if __name__ == "__main__":
     generate_summary()

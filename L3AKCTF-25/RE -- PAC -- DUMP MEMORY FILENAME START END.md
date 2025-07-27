@@ -307,3 +307,19 @@ if __name__ == "__main__":
     decrypt_flag()
     print("-" * 30)
 ```
+
+ANGR WTF ???
+```
+import angr
+proj = angr.Project('pac')
+state = proj.factory.entry_state(
+    add_options={
+        angr.options.ZERO_FILL_UNCONSTRAINED_MEMORY,
+        angr.options.ZERO_FILL_UNCONSTRAINED_REGISTERS
+    }
+)
+simgr = proj.factory.simgr(state)
+simgr.run()
+flag = simgr.deadended[2].posix.dumps(0).decode()
+print(f"{flag = }")
+```

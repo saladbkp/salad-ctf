@@ -108,3 +108,5 @@ p.interactive()
 ```
 L3AK{6375_15_4pp4r3n7ly_n3v3r_54f3}
 ```
+
+https://github.com/sajjadium/ctf-archives/tree/268eabc246f2555f759a7b11fd3c25c46724db7c/ctfs/L3akCTF/2025/rev

