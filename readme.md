@@ -1,9 +1,11 @@
 | Category | CTF Name | Challenge Name | Type | Description | Date | Solved |
 |----------|----------|----------------|------|-------------|------|--------|
+| PWN | TyphoonCon-23 | BookManager | Double free with magic door | 1. HOW TO LEAK libc?<br>2. how to build payload<br>3. heap where to inject?<br>4. double free Attack flow ? | 2025-07-31 | ✅ Yes |
+| AND | L3AKCTF-25 | Androbro | so cannot match | # 2.0 Analysis | 2025-07-30 | ❌ No |
+| AND | L3AKCTF-25 | FileStorage | so cannot match | # 2.0 Analysis | 2025-07-30 | ❌ No |
+| PWN | WDB-24 | PWN4 | UAF ORW | 1. UNKNOWN username password, brute with bad compare function? | 2025-07-30 | ✅ Yes |
 | Crypto | DeadSec-25 | infant RSA | phi low 500 | 1. phi & ((1 << 500)-1) do what?<br>2. how to use this hint to get p / q? | 2025-07-27 | ✅ Yes |
 | PWN | WDB-24 | pwn2 | STACK MITIGATION 32 | 1. why after system show sh: 1: \x0c-#: not found?<br>2. not enough buffer, how ?<br>3. how to generate stack mitigation payload | 2025-07-27 | ✅ Yes |
-| AND | L3AKCTF-25 | Androbro |  | # 2.0 Analysis | 2025-07-23 | ✅ Yes |
-| AND | L3AKCTF-25 | FileStorage |  | # 2.0 Analysis | 2025-07-23 | ✅ Yes |
 | PWN | L3AKCTF-25 | Safe Gets | BO | 1. strlen -> /x00 to stop the checking<br>2. python wrapper only 0xff -> can use emoji in python on 1 length, but for c is 4 bytes | 2025-07-23 | ✅ Yes |
 | RE | L3AKCTF-25 | ALPHA | GDB dump lief extract VM instruction | 1. HOW TO DUMP? with gdb script<br>2. what is the VM instruction?<br>3. z3 solve with instruction? | 2025-07-23 | ✅ Yes |
 | RE | L3AKCTF-25 | PAC | DUMP MEMORY FILENAME START END | 1. Why decompile code so less?<br>2. How to dump it?<br>3. How to list stack variable value | 2025-07-23 | ✅ Yes |

