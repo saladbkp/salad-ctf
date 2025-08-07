@@ -15,3 +15,7 @@ sudo docker cp extract-libc:/srv/lib/x86_64-linux-gnu/libc.so.6 ./libc.so.6
 
 ```
 
+manually patchelf
+```
+patchelf --set-interpreter ./ld-2.27.so XXXX
+```

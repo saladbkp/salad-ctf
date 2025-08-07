@@ -134,6 +134,7 @@ pwndbg> x/20gx 0x602110
 
 为什么我改 4 会 变到 magic_library = one_gadget?
 因为 malloc 0x8 -> 4 from magic_library 
+原本 4 的位置 被 2 改成 magic_library 了
 # 4.0 FLAG 
 local not in remote
 # 5.0 FINAL SCRIPT 

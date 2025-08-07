@@ -569,6 +569,56 @@ p3 = malloc(CHUNK_SIZE); 0x56301ae5f8e0
 
 p2 == p3
 ```
-## 6.0 tcache_poisoning
+## 7.0 tcache_poisoning
+double free 改 tcahce free list fd -> stack address
 
+标准 glib 2.35 才有 tcache
+做什么的？
+```
+target = 0x7ffc6c48c240.
 
+a = malloc(128): 0x55ce60cab2a0 1
+b = malloc(128): 0x55ce60cab330 2
+
+free a
+free b
+
+b[0] = target ^ >> 12
+
+malloc(128)
+
+c = malloc(128)
+
+target == c
+```
+
+重点 在 `b[0] = target ^ >> 12`
+
+```
+target = 0x7ffc6c48c240.
+
+a = malloc(128): 0x55ce60cab2a0 1
+b = malloc(128): 0x55ce60cab330 2
+
+free a
+free b
+tcache list [ b -> a ]
+
+改 b fd -> target
+
+现在是
+b -> 0x55ce60cab330
+要变成
+b -> 0x7ffc6c48c240 target
+
+b[0] = target ^ >> 12
+tcache list [ b -> target ]
+
+1st malloc(128): 0x55ce60cab330
+tcache list [ target ]
+
+2nd malloc(128): 0x7ffc6c48c240
+
+HEHEHEH  出来的 就是 target 可以control target 了
+
+```
